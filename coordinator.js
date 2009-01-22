@@ -18,6 +18,25 @@ blackPin.infoWindowAnchor = new GPoint(5, 1);
 
 // Initializations
 
+// each marker has a spot
+var SpotMarker = function(spot) {
+    GMarker.call(this, new GLatLng(spot.lat, spot.lng), {title: this.titleNoFormatting, icon: pinIcon});
+    this.spot = spot;
+};
+
+function clone(src) {
+    var constructor = function(){};
+    constructor.prototype = src;
+    return new constructor();
+}
+
+SpotMarker.prototype = clone(GMarker.prototype);
+SpotMarker.prototype.constructor = SpotMarker;
+SpotMarker.prototype.openSpotInfoWindow = function() {
+    console.debug('openSpotInfoWindow',this);
+    this.openInfoWindowHtml('<a href="' + this.spot.url + '">' + this.spot.title + '</a>');
+};
+
 google.load("search", "1");
 
 function load() {
@@ -28,6 +47,7 @@ function load() {
     if (GBrowserIsCompatible()) {
         map = new GMap2(document.getElementById("map"));
         map.addControl(new GLargeMapControl());
+	map.enableScrollWheelZoom();
         //map.setCenter(new GLatLng(37.4419, -122.1419), 13);
 	map.setCenter(new GLatLng(35.616955, 139.7080794), 13);
         //get_address_latlng("品川区大崎", function (latlng) {
@@ -61,12 +81,9 @@ function load() {
 				     $(spots).each(function() {
 					     if(!uniq_spots[this.titleNoFormatting]) {
 						 uniq_spots[this.titleNoFormatting] = this;
-						 var m = new GMarker(new GLatLng(this.lat, this.lng), {title: this.titleNoFormatting, icon: pinIcon});
-						 var spot = this;
-						 GEvent.addListener(m, 'click', function() {
-							 console.debug('click');
-							 this.openInfoWindowHtml('<a href="' + spot.url + '">' + spot.title + '</a>');
-						     });
+						 var m = new SpotMarker(this);
+						 // this is the object triggered the click event, which is an instance of SpotMarker at this time.
+						 GEvent.addListener(m, 'click', function() { this.openSpotInfoWindow() });
 						 map.addOverlay(m);
 					     }
 					 });
